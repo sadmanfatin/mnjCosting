@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="windows-1252" ?>
+<!DOCTYPE ViewLink SYSTEM "jbo_03_01.dtd">
+<!---->
+<ViewLink
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="orderVsSaleVsSalesDetailsVL"
+  Version="11.1.1.62.29"
+  InheritPersonalization="true">
+  <DesignTime>
+    <Attr Name="_isCodegen" Value="true"/>
+  </DesignTime>
+  <Properties>
+    <SchemaBasedProperties>
+      <LABEL
+        ResId="mnj.mfg.model.views.orderVsSaleVsSalesDetailsVL_LABEL"/>
+    </SchemaBasedProperties>
+  </Properties>
+  <ViewLinkDefEnd
+    Name="orderVsSaleVO"
+    Cardinality="1"
+    Owner="mnj.mfg.model.views.orderVsSaleVO"
+    Source="true">
+    <DesignTime>
+      <Attr Name="_finderName" Value="orderVsSaleVO"/>
+      <Attr Name="_isUpdateable" Value="true"/>
+    </DesignTime>
+    <AttrArray Name="Attributes">
+      <Item Value="mnj.mfg.model.views.orderVsSaleVO.BuyerId"/>
+      <Item Value="mnj.mfg.model.views.orderVsSaleVO.Colour"/>
+      <Item Value="mnj.mfg.model.views.orderVsSaleVO.OrgId"/>
+      <Item Value="mnj.mfg.model.views.orderVsSaleVO.Season"/>
+      <Item Value="mnj.mfg.model.views.orderVsSaleVO.Style"/>
+      <Item Value="mnj.mfg.model.views.orderVsSaleVO.WashName"/>
+    </AttrArray>
+  </ViewLinkDefEnd>
+  <ViewLinkDefEnd
+    Name="salesDetailsVO"
+    Cardinality="-1"
+    Owner="mnj.mfg.model.views.salesDetailsVO">
+    <DesignTime>
+      <Attr Name="_finderName" Value="salesDetailsVO"/>
+      <Attr Name="_isUpdateable" Value="true"/>
+    </DesignTime>
+    <AttrArray Name="Attributes">
+      <Item Value="mnj.mfg.model.views.salesDetailsVO.BuyerId"/>
+      <Item Value="mnj.mfg.model.views.salesDetailsVO.Color"/>
+      <Item Value="mnj.mfg.model.views.salesDetailsVO.OrgId"/>
+      <Item Value="mnj.mfg.model.views.salesDetailsVO.Season"/>
+      <Item Value="mnj.mfg.model.views.salesDetailsVO.Style"/>
+      <Item Value="mnj.mfg.model.views.salesDetailsVO.WashName"/>
+    </AttrArray>
+  </ViewLinkDefEnd>
+  <ResourceBundle>
+    <PropertiesBundle
+      PropertiesFile="mnj.mfg.model.ModelBundle"/>
+  </ResourceBundle>
+</ViewLink>

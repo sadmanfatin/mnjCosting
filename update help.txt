@@ -1,0 +1,40 @@
+auto sugg update on 23-07-2018
+
+
+#{bindings.CostingStatus.inputValue=='Confirmed' || bindings.MnjMfgPrecostingLView1Iterator.estimatedRowCount<1 ? 'true':'false'}
+
+
+
+#{sessionScope.KeyFlag=='MD'? 'true':'false'}
+
+
+
+
+#{sessionScope.KeyFlag=='MD'? 'true':'false'}
+
+
+
+        ViewObject ovj =  am.getdetailsReport1();
+        ViewObject searchVO=am.getFilterView1();
+        String buyer,season,unit,fit,itemDescription,enduser;
+        String filter=null;
+        StringBuilder setVal = null;
+        setVal = new StringBuilder();
+        
+        try{
+           buyer=searchVO.getCurrentRow().getAttribute("Buyer").toString();
+          //  String buyerwhrcls="BUYER =byer;
+            setVal.append(String.format("BUYER = '"+buyer+"'"));
+        }
+        catch(Exception e) {
+          buyer=null;
+        }
+        
+        try{
+             season=searchVO.getCurrentRow().getAttribute("Season").toString();
+        }
+        catch(Exception e) {
+            season=null;
+        }
+        filter=setVal.toString();
+        ovj.setWhereClause(filter);

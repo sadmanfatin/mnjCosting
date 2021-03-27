@@ -1,0 +1,512 @@
+    public String refershButton() {
+
+        
+        String checkMendatoryFieldsStatus = checkMendatoryFields();
+        
+        
+        if(checkMendatoryFieldsStatus != null ){
+          this.showMessage(checkMendatoryFieldsStatus , "error");
+           return null ;
+        }
+        
+         ViewObject headerVo = am.getMnjMfgPrecostingHView1();
+        ViewObject lineVo = am.getMnjMfgPrecostingLView1();
+        RowSet  lineRowSet = (RowSet)headerVo.getCurrentRow().getAttribute("MnjMfgPrecostingLView") ;
+        
+        
+      
+     //  System.out.println("09090909090909090  currentLineId  "+   lineVo.getCurrentRow().getAttribute("LineId"));
+      
+      while ( lineRowSet.hasNext()) { 
+           
+               Row lineRow  = lineRowSet.next();
+               System.out.println("-----------------  lineRow      " + lineRow.getAttribute("LineId")); 
+              
+               managementCal(0 ,lineRow );
+               productionCalculation(lineRow);
+               ValueCalculation( lineRow);
+               setfabricDescription(lineRow);
+               
+        }
+      
+     // System.out.println("09090909090909090  currentLineId  "+   lineVo.getCurrentRow().getAttribute("LineId"));
+
+        am.StyleTracking();
+       
+        am.getDBTransaction().commit();
+       
+
+        
+        this.refreshQueryKeepingCurrentRow(am.getMnjMfgPrecostingLView1());
+        
+        
+        AdfFacesContext.getCurrentInstance().addPartialTarget(subCostingTable);
+        AdfFacesContext.getCurrentInstance().addPartialTarget(panelTabbed);
+       
+        
+        return null;
+    }    
+
+=========================================================================================================
+public void managementCal(int marchand , Row lineRow) {
+        
+        format.setMinimumFractionDigits(2);
+        int check=marchand;
+        System.out.println("ENTER  managementCal ENTER  managementCal ENTER  managementCal ENTER  managementCal ENTER  managementCal ENTER  managementCal");
+        ViewObject headerVo=am.getMnjMfgPrecostingHView1();
+         ViewObject MnjLineV=am.getMnjMfgPrecostingLView1();
+         
+        DecimalFormat df = new DecimalFormat("##.00");
+        
+        double costCal =0.0;
+        costCal =  calculateCost(lineRow);
+        lineRow.setAttribute("Cost",costCal);
+          
+        //        try{
+        //           profitt =Double.parseDouble((getProfit().getValue().toString()));
+        //        }
+        //        catch(Exception e) {
+        //           profitt=0.00;
+        //        }
+        //        System.out.println("..........-----------------profit="+profitt);
+        
+        
+        double febricTotal = 0.00;
+        double washTotalVal = 0.00;
+        double trimTotalVal = 0.00;
+        double otherVal=0.00;
+
+        washTotalVal = getSelectedDryTotal(lineRow) + getSelectedWetTotal(lineRow);
+        febricTotal=FebricTotal(lineRow);
+        trimTotalVal= TrimTotal(lineRow);
+        otherVal= othertotal(lineRow);
+        
+            
+        System.out.println("..........-----------------washTotalVal="+washTotalVal);
+        System.out.println("..........-----------------febricTotal="+febricTotal);
+        System.out.println("..........-----------------trimTotalVal="+trimTotalVal);
+        System.out.println("..........-----------------otherVal="+otherVal);
+        
+        
+        double cmValue=0.00;
+        double CM=0.00;
+        double finaceValue=0.00;
+        double febric=0.00;
+        double trim=0.00;
+        double wash=0.00;
+        double fabricPriceByMrch=0.00;
+        double trimsPriceByMrch=0.00;
+        double washPriceByMrch=0.00;
+        try{
+            
+          fabricPriceByMrch=Double.parseDouble( am.getMnjMfgPrecostingHView1().getCurrentRow().getAttribute("FabricFinance").toString() );
+
+        }
+        catch(Exception e){
+            fabricPriceByMrch=0.00;
+        }
+        
+        
+        try{
+
+            trimsPriceByMrch=Double.parseDouble( am.getMnjMfgPrecostingHView1().getCurrentRow().getAttribute("TrimFinance").toString() );
+         
+        }
+        catch(Exception e){
+            trimsPriceByMrch=0.00;
+        }
+        try{
+
+            washPriceByMrch=Double.parseDouble( am.getMnjMfgPrecostingHView1().getCurrentRow().getAttribute("WashFinance").toString() );
+      
+        }
+        catch(Exception e){
+            washPriceByMrch=0.00;
+        }
+        
+        febric=febricValue()-fabricPriceByMrch;       
+        System.out.println("---------------------------------->fabric% "+febricValue()+"adjusted fabric "+febric);
+        trim=trimValue()-trimsPriceByMrch;
+        System.out.println("---------------------------------->trims% "+febricValue()+"adjusted trim "+trim);
+        wash=washValue()-washPriceByMrch;
+        
+        
+        finaceValue=((febricTotal*febric)/100)+((trimTotalVal*trim)/100)+((washTotalVal*wash)/100);
+        //String financeformat=df.format(finaceValue);
+        // finaceValue=  Double.parseDouble(financeformat);
+        //  finaceValue=  MyMath.round(finaceValue);
+        
+        
+        //vvv  MnjLineV.getCurrentRow().setAttribute("Finance",finaceValue);
+        lineRow.setAttribute("Finance",finaceValue);
+        
+        febricTotal=febricTotal+((febricTotal*fabricPriceByMrch)/100);
+        
+        trimTotalVal=trimTotalVal+((trimTotalVal*trimsPriceByMrch)/100);
+        
+        washTotalVal=washTotalVal+((washTotalVal*washPriceByMrch)/100);
+        
+        System.out.println("trim value after using round="+MyMath.round(trimTotalVal));
+        
+        lineRow.setAttribute("FabricCost",MyMath.roundTo3(febricTotal));
+        
+        lineRow.setAttribute("TrimCost",MyMath.roundTo3(trimTotalVal));
+        
+        lineRow.setAttribute("WashCost",MyMath.roundTo3(washTotalVal)); 
+        
+        lineRow.setAttribute("Others",MyMath.roundTo3(otherVal));
+     
+        System.out.println("..........-----------------finaceValue="+finaceValue);
+        
+        
+        try{     
+              CM = Double.parseDouble( lineRow.getAttribute("CmMerchand").toString() );          
+        }
+        catch(Exception e){
+              CM=0.00;
+        }
+       
+        double samValue=0.00,smvValue=0.00,factoryAvrgEff=0.00,StyleEff=0.00,newCost=0.00;
+        try{            
+           StyleEff = Double.parseDouble( lineRow.getAttribute("StyleEfficiency").toString() );
+            
+         }
+        catch(Exception e) {
+           StyleEff=0.00;
+        }
+        
+        try{
+             samValue = Double.parseDouble( lineRow.getAttribute("Sam").toString() );            
+        }
+        catch(Exception e) {
+           samValue=0.00;
+        }
+                
+        factoryAvrgEff=FactoryAvgEff();
+        smvValue=SMV();
+      
+        lineRow.setAttribute("FactoryAvgEf", factoryAvrgEff);
+        lineRow.setAttribute("Smv",smvValue);
+        
+        
+        if(StyleEff != 0){
+            newCost=(((samValue*smvValue)/StyleEff)*factoryAvrgEff);
+        }
+        // String costformat=df.format(newCost);
+        // newCost= Double.parseDouble(costformat);
+        newCost=MyMath.round(newCost);
+        lineRow.setAttribute("CostNew",newCost);
+        
+        double totalcost=0.0;       
+        totalcost=finaceValue+newCost;        
+        lineRow.setAttribute("TotalCost",totalcost);
+        
+        double calProfit=0.00;
+        double setProfit=0.00;
+        
+        calProfit=MyMath.round(CM-totalcost); 
+        cmValue=finaceValue+newCost+calProfit;  
+        
+        double setCm=0.00;
+        double setManagementCm=0.00;
+        if(check==1){
+            int set=1;
+            headerVo.getCurrentRow().setAttribute("CmCalculation",set);
+            setCm=cmValue;
+            
+        }
+        try{
+            headerVo.getCurrentRow().getAttribute("CmCalculation").toString();
+            double prof=0.00;
+            try{
+            prof =Double.parseDouble(lineRow.getAttribute("Profit").toString());
+            }
+            catch(Exception e) {
+                prof=calProfit;
+            }
+            setCm=finaceValue+newCost+prof;  
+            setProfit=prof;
+            setManagementCm=setCm;
+        }
+        catch(Exception e) {
+            setCm=CM;
+           setProfit=calProfit;
+            setManagementCm=cmValue;
+        }
+        
+        
+        lineRow.setAttribute("Profit",setProfit);
+        lineRow.setAttribute("Cm",MyMath.round(setCm));
+        
+        lineRow.setAttribute("CmManagement",MyMath.round(setManagementCm));
+        // System.out.println("..........-----------------cmValue="+cmValue);
+        
+         
+        double FOB=0.00;
+  
+         FOB=febricTotal+washTotalVal+trimTotalVal+otherVal+setCm;
+        //String fobformat=df.format(FOB);
+        // FOB=  Double.parseDouble(fobformat);
+    
+        calculateAndUpdateFobValues(   FOB, lineRow ); 
+       
+        AdfFacesContext.getCurrentInstance().addPartialTarget(profit);
+        AdfFacesContext.getCurrentInstance().addPartialTarget(subCostingTable);
+        AdfFacesContext.getCurrentInstance().addPartialTarget(panelTabbed);
+        
+    }
+
+
+
+
+
+
+=================================================================================================================
+private void setfabricDescription(Row lineRow) {
+
+        
+       
+            String feb2=null;
+            String feb3=null;
+            String feb4=null;
+            RowSet child = (RowSet)lineRow.getAttribute("FebricView");
+            Row[] r = child.getAllRowsInRange();
+           // System.out.println("febric clid row---------------->"+r.length);
+            
+            StringBuilder setVal2 = null;
+            setVal2 = new StringBuilder();
+            StringBuilder setVal3 = null;
+            setVal3 = new StringBuilder();
+            StringBuilder setVal4 = null;
+            setVal4 = new StringBuilder();
+            
+            try{
+            
+            
+            int count =0,check=0;
+//            for (Row row : r){
+//                oracle.jbo.domain.Number prefix = (Number)row.getAttribute("ItemPrefix"); 
+//                if ((prefix.intValue() >= 11 && prefix.intValue() <= 12)){
+//                    count++;
+//                }
+//            }
+            
+            for (Row row : r) {
+                
+                oracle.jbo.domain.Number prefix = (Number)row.getAttribute("ItemPrefix"); 
+                if ((prefix.intValue() >= 11 && prefix.intValue() <= 12)){
+
+                        try{
+                          feb2=row.getAttribute("RefCode").toString();
+                        }
+                        catch(Exception e){
+                            feb2=null;
+                        }  
+                        
+                        try{
+                          feb3=row.getAttribute("ItemDesc").toString();
+                        }
+                        catch(Exception e){
+                            feb3=null;
+                        }   
+                           
+                   // setVal2.append(String.format(feb2)); 
+                   // setVal3.append(String.format(feb3)); 
+//                    if(count!=check) {
+//                        setVal2.append(String.format("/"));
+//                   // setVal3.append(String.format("/"));     
+//                }
+                           
+                }
+               
+            }
+            setVal2.append(String.format(feb2));
+            setVal4.append(setVal2.toString());
+            setVal4.append(String.format(" & "));
+            setVal4.append(feb3);
+              
+//            System.out.println("...................... String.format(feb2) = "+String.format(feb2) + "  ------------------   feb2   "+ feb2 ); 
+//            System.out.println("...................... setVal2.toString() = "+ setVal2.toString() + "  ------------------   setVal2  "+ setVal2 );   
+            
+          //  System.out.println("......................feb cont dec string= "+setVal4.toString());
+                
+            lineRow.setAttribute("FabricDesc", setVal2.toString() );
+            lineRow.setAttribute("FabricContent",setVal4.toString());
+            AdfFacesContext.getCurrentInstance().addPartialTarget(article_value);
+                
+        }
+        catch(Exception e){
+            ;
+        }        
+        
+        // String TBA=String.valueOf(TB);
+              
+        
+    }
+=================================================================================================================
+
+        public double getSelectedDryTotal(Row lineRow) {
+            
+        DCBindingContainer bindings =
+            (DCBindingContainer)BindingContext.getCurrent().getCurrentBindingsEntry();
+        DCIteratorBinding dcIteratorBindings =
+            bindings.findIteratorBinding("DryDetailVO1Iterator");
+        
+        // Get all the rows of a iterator
+        
+      RowSet  dryRowSet = (RowSet)lineRow.getAttribute("DryDetailVO");
+        Row[] rows  = dryRowSet.getAllRowsInRange();
+        
+        double total = 0.00, val = 0.00, val2 = 0.0;
+        
+       
+        
+        for (Row row : rows) {
+            try { //ManualPrice
+                val =Double.parseDouble(String.valueOf(row.getAttribute("Total")));
+                val2 =Double.parseDouble(String.valueOf(row.getAttribute("ManualPrice")));
+            } catch (Exception e) {
+                val2 = 0;
+            }
+            if (val > 0)
+                total += val;
+            else
+                total += val2;
+        } //end of for each loop
+
+        return total;
+
+    }
+
+=================================================================================================================
+    public double getSelectedWetTotal(Row lineRow) {
+         
+//        DCBindingContainer bindings =
+//            (DCBindingContainer)BindingContext.getCurrent().getCurrentBindingsEntry();
+//        DCIteratorBinding dcIteratorBindings =
+//            bindings.findIteratorBinding("MnjMfgPrecostingWetDView1Iterator");
+//        // Get all the rows of a iterator
+        
+
+        RowSet  wetRowSet = (RowSet)lineRow.getAttribute("MnjMfgPrecostingWetDView");
+        Row[] rows = wetRowSet.getAllRowsInRange();
+ 
+        double total = 0.00, val = 0.00, val2 = 0.0;
+
+        
+//        System.out.println("====================== dcIteratorBindings.getAllRowsInRange().length  "  + dcIteratorBindings.getAllRowsInRange().length );
+//        System.out.println("====================== dryRowSet.getAllRowsInRange().length "  + wetRowSet.getAllRowsInRange().length );
+//        System.out.println("======================  am.MnjMfgPrecostingWetDView1().getAllRowsInRange().length "  + am.getMnjMfgPrecostingWetDView1().getAllRowsInRange().length );
+        
+        
+        for (Row row : rows) {
+
+            try { //ManualPrice
+                val  =Double.parseDouble(String.valueOf(row.getAttribute("NewTotalVal")));
+                val2 =Double.parseDouble(String.valueOf(row.getAttribute("ManualPrice")));
+            } catch (Exception e) {
+                val2 = 0;
+            }
+            if (val > 0)
+                total += val;
+            else
+                total += val2;
+
+        } //end of for each loop
+
+        return total;
+
+    }
+
+
+=================================================================================================================
+
+     public void productionCalculation(Row lineRow) {
+        // Add event code here...
+        String unit = null;
+       
+          
+            try {
+                unit = am.getMnjMfgPrecostingHView1().getCurrentRow().getAttribute("ProductionUnit").toString();
+                
+            } catch (Exception e) {
+            // TODO: Add catch code
+            ;
+            }  
+        
+        //System.out.println("Unit----->>"+unit);
+        
+        try {
+            // mt 10-jun   // producPerLine.setValue(MyMath.toNumber(MyMath.round(getProdPerLineFromProc(unit, getProjectionNo().getValue()))));
+            lineRow.setAttribute("ProdCostLinePerH",
+                                 MyMath.toNumber(getProdCostUnitWise(unit)));
+            //  prodCostPerLine.setValue(MyMath.toNumber(getProdCostUnitWise(unit)));
+            // mt 10-jun    // AdfFacesContext.getCurrentInstance().addPartialTarget(producPerLine);
+            AdfFacesContext.getCurrentInstance().addPartialTarget(prodCostPerLine);
+        } catch (Exception e) {
+            ;
+        }
+       // refreshValues();
+    }
+
+=================================================================================================================
+    private void ValueCalculation(Row  lineRow ) {
+        //setOthersValues();
+        setMerchValues(lineRow);
+    }
+
+=================================================================================================================
+
+    public void setMerchValues(Row lineRow){
+            
+        double merchPc=0 ;
+       // merchPc =   MyMath.numeric(getCmMerchandiser());      
+        
+       try {
+            merchPc = Double.parseDouble(lineRow.getAttribute("CmMerchand").toString()  );      
+        } catch (Exception e) {
+            // TODO: Add catch code
+            merchPc=0.0;
+           // e.printStackTrace();
+        }
+         double result = 0.0;       
+        result = merchPc * 12;
+        
+        
+      //  cmMerchDzn.setValue(MyMath.toNumber(result));
+        am.getMnjMfgPrecostingHView1().getCurrentRow().setAttribute("CmMerchandiserD", MyMath.toNumber(result));
+        AdfFacesContext.getCurrentInstance().addPartialTarget(cmMerchDzn);
+          
+    }
+
+==================================================================================================
+
+
+
+
+
+    public void productionListener(ValueChangeEvent valueChangeEvent) {
+        // Add event code here...
+        System.out.println("Unit Lsitener");
+        String unit = null;
+        try {
+           System.out.println("Production Unit------->>"+getProductionUnit().getValue().toString());
+            unit = valueChangeEvent.getNewValue().toString();
+        } catch (Exception e) {
+            ;
+        }
+        
+        RowSet lineRowSet = (RowSet)am.getMnjMfgPrecostingHView1().getCurrentRow().getAttribute("MnjMfgPrecostingLView");
+        Row lineRow ;
+        while(lineRowSet.hasNext()){
+            lineRow = lineRowSet.next();
+            
+            
+            lineRow.setAttribute("ProdCostLinePerH",MyMath.toNumber(getProdCostUnitWise(unit)));
+        }
+
+      
+        AdfFacesContext.getCurrentInstance().addPartialTarget(prodCostPerLine);
+
+       //refreshValues();
+    }

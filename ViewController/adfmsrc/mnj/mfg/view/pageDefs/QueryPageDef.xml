@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<pageDefinition xmlns="http://xmlns.oracle.com/adfm/uimodel"
+                version="11.1.1.62.29" id="QueryPageDef"
+                Package="mnj.mfg.view.pageDefs">
+  <parameters/>
+  <executables>
+    <variableIterator id="variables"/>
+    <iterator Binds="MnjMfgPrecostingHView1" RangeSize="25"
+              DataControl="AppModuleDataControl"
+              id="MnjMfgPrecostingHView1Iterator"/>
+    <searchRegion Criteria="SearchByDocNo"
+                  Customizer="oracle.jbo.uicli.binding.JUSearchBindingCustomizer"
+                  Binds="MnjMfgPrecostingHView1Iterator"
+                  id="SearchByDocNoQuery"/>
+    <invokeAction Binds="openSpecificPOC" id="openSpecificPOCEx"
+                  Refresh="always"/>
+    <invokeAction Binds="setSessionValues" id="setSesValues" Refresh="always"/>
+    <iterator Binds="SearchViewOb1" RangeSize="25"
+              DataControl="AppModuleDataControl" id="SearchViewOb1Iterator"/>
+    <iterator Binds="searchVIEW1" RangeSize="25"
+              DataControl="AppModuleDataControl" id="searchVIEW1Iterator"/>
+    <iterator Binds="detailsReport1" RangeSize="10000"
+              DataControl="AppModuleDataControl" id="detailsReport1Iterator"/>
+    <searchRegion Binds="detailsReport1Iterator" Criteria=""
+                  Customizer="oracle.jbo.uicli.binding.JUSearchBindingCustomizer"
+                  id="detailsReport1Query"/>
+    <iterator Binds="FilterView1" RangeSize="25"
+              DataControl="AppModuleDataControl" id="FilterView1Iterator"/>
+    <iterator Binds="orderVsSaleVO1" RangeSize="100"
+              DataControl="AppModuleDataControl" id="orderVsSaleVO1Iterator"/>
+    <searchRegion Binds="orderVsSaleVO1Iterator" Criteria=""
+                  Customizer="oracle.jbo.uicli.binding.JUSearchBindingCustomizer"
+                  id="orderVsSaleVO1Query"/>
+    <iterator Binds="orderDetailsVO1" RangeSize="100"
+              DataControl="AppModuleDataControl" id="orderDetailsVO1Iterator"/>
+    <searchRegion Binds="orderDetailsVO1Iterator" Criteria=""
+                  Customizer="oracle.jbo.uicli.binding.JUSearchBindingCustomizer"
+                  id="orderDetailsVO1Query"/>
+    <iterator Binds="washCostReport1" RangeSize="100"
+              DataControl="AppModuleDataControl" id="washCostReport1Iterator"/>
+    <searchRegion Binds="washCostReport1Iterator" Criteria=""
+                  Customizer="oracle.jbo.uicli.binding.JUSearchBindingCustomizer"
+                  id="washCostReport1Query"/>
+    <iterator Binds="salesDetailsVO1" RangeSize="25"
+              DataControl="AppModuleDataControl" id="salesDetailsVO1Iterator"/>
+    <searchRegion Binds="salesDetailsVO1Iterator" Criteria=""
+                  Customizer="oracle.jbo.uicli.binding.JUSearchBindingCustomizer"
+                  id="salesDetailsVO1Query"/>
+  </executables>
+  <bindings>
+    <tree IterBinding="MnjMfgPrecostingHView1Iterator"
+          id="MnjMfgPrecostingHView1">
+      <nodeDefinition DefName="mnj.mfg.model.views.MnjMfgPrecostingHView"
+                      Name="MnjMfgPrecostingHView10">
+        <AttrNames>
+          <Item Value="HeaderNo"/>
+          <Item Value="OrderProjectionNo"/>
+          <Item Value="BuyerId"/>
+          <Item Value="DropPeriod"/>
+          <Item Value="Brand"/>
+          <Item Value="StyleName"/>
+          <Item Value="StyleNo"/>
+          <Item Value="Fit"/>
+          <Item Value="EndUser"/>
+          <Item Value="ItemDescription"/>
+          <Item Value="ColourWash"/>
+          <Item Value="OtherCharges"/>
+          <Item Value="LabTestCharges"/>
+          <Item Value="Print"/>
+          <Item Value="Commission"/>
+          <Item Value="SmsQty"/>
+          <Item Value="OrderQty"/>
+          <Item Value="CostingMou"/>
+          <Item Value="FabricFinance"/>
+          <Item Value="TrimFinance"/>
+          <Item Value="WashFinance"/>
+          <Item Value="ProductionUnit"/>
+          <Item Value="CmMerchandiser"/>
+          <Item Value="Buyer"/>
+          <Item Value="Season"/>
+          <Item Value="GmStatus"/>
+          <Item Value="VersionNo"/>
+          <Item Value="PocType"/>
+          <Item Value="ProdStyleNo"/>
+          <Item Value="Attachemnt"/>
+          <Item Value="StyleNameNew"/>
+          <Item Value="Colour"/>
+          <Item Value="WashN"/>
+          <Item Value="CostingStatus"/>
+        </AttrNames>
+      </nodeDefinition>
+    </tree>
+    <action IterBinding="MnjMfgPrecostingHView1Iterator" id="CreateInsert"
+            RequiresUpdateModel="true" Action="createInsertRow"/>
+    <action IterBinding="MnjMfgPrecostingHView1Iterator" id="Delete"
+            RequiresUpdateModel="false" Action="removeCurrentRow"/>
+    <action id="Commit" RequiresUpdateModel="true" Action="commitTransaction"
+            DataControl="AppModuleDataControl"/>
+    <action id="Rollback" RequiresUpdateModel="false"
+            Action="rollbackTransaction" DataControl="AppModuleDataControl"/>
+    <methodAction IterBinding="MnjMfgPrecostingHView1Iterator"
+                  id="openSpecificPOC" RequiresUpdateModel="true"
+                  Action="invokeMethod" MethodName="openSpecificPOC"
+                  IsViewObjectMethod="true" DataControl="AppModuleDataControl"
+                  InstanceName="AppModuleDataControl.MnjMfgPrecostingHView1">
+      <NamedData NDName="POC" NDValue="#{viewScope.POCNO}"
+                 NDType="java.lang.String"/>
+    </methodAction>
+    <methodAction id="CopyPrecost"
+                  InstanceName="AppModuleDataControl.dataProvider"
+                  DataControl="AppModuleDataControl" RequiresUpdateModel="true"
+                  Action="invokeMethod" MethodName="CopyPrecost"
+                  IsViewObjectMethod="false">
+      <NamedData NDName="type" NDType="java.lang.String"/>
+    </methodAction>
+    <methodAction id="setSessionValues"
+                  InstanceName="AppModuleDataControl.dataProvider"
+                  DataControl="AppModuleDataControl" RequiresUpdateModel="true"
+                  Action="invokeMethod" MethodName="setSessionValues"
+                  IsViewObjectMethod="false">
+      <NamedData NDName="userId" NDValue="#{viewScope.UserId}"
+                 NDType="java.lang.String"/>
+      <NamedData NDName="orgId" NDValue="#{viewScope.OrgId}"
+                 NDType="java.lang.String"/>
+      <NamedData NDName="respId" NDValue="#{viewScope.RespId}"
+                 NDType="java.lang.String"/>
+      <NamedData NDName="respApplId" NDValue="#{viewScope.RespApplId}"
+                 NDType="java.lang.String"/>
+    </methodAction>
+    <methodAction id="CopyAllPrecost"
+                  InstanceName="AppModuleDataControl.dataProvider"
+                  DataControl="AppModuleDataControl" RequiresUpdateModel="true"
+                  Action="invokeMethod" MethodName="CopyAllPrecost"
+                  IsViewObjectMethod="false">
+      <NamedData NDName="type" NDType="java.lang.String"/>
+    </methodAction>
+    <listOfValues StaticList="false"
+                  IterBinding="MnjMfgPrecostingHView1Iterator" Uses="LOV_Buyer"
+                  id="Buyer"/>
+    <list IterBinding="MnjMfgPrecostingHView1Iterator" StaticList="false"
+          Uses="LOV_Season" id="Season" DTSupportsMRU="false"/>
+    <attributeValues IterBinding="SearchViewOb1Iterator" id="Buyer1">
+      <AttrNames>
+        <Item Value="Buyer"/>
+      </AttrNames>
+    </attributeValues>
+    <attributeValues IterBinding="SearchViewOb1Iterator" id="Season1">
+      <AttrNames>
+        <Item Value="Season"/>
+      </AttrNames>
+    </attributeValues>
+    <listOfValues StaticList="false" IterBinding="searchVIEW1Iterator"
+                  Uses="LOV_Buyer" id="Buyer2"/>
+    <listOfValues StaticList="false" IterBinding="searchVIEW1Iterator"
+                  Uses="LOV_Season" id="Season2"/>
+    <tree IterBinding="detailsReport1Iterator" id="detailsReport1">
+      <nodeDefinition DefName="mnj.mfg.model.views.detailsReport"
+                      Name="detailsReport10">
+        <AttrNames>
+          <Item Value="StyleNo"/>
+          <Item Value="WashType"/>
+          <Item Value="Quantity"/>
+          <Item Value="Fob"/>
+          <Item Value="TtlFob"/>
+          <Item Value="Profit"/>
+          <Item Value="TtlProfit"/>
+          <Item Value="QtyDry"/>
+          <Item Value="DryCost"/>
+          <Item Value="TotalDryCost"/>
+          <Item Value="QtyWet"/>
+          <Item Value="WetCost"/>
+          <Item Value="TotalWetCost"/>
+          <Item Value="WashCost"/>
+          <Item Value="TotalWashCost"/>
+          <Item Value="Cm"/>
+          <Item Value="TtlCm"/>
+          <Item Value="HeaderNo"/>
+          <Item Value="Buyer"/>
+          <Item Value="BuyerId"/>
+          <Item Value="Season"/>
+          <Item Value="ProductionUnit"/>
+          <Item Value="Fit"/>
+          <Item Value="EndUser"/>
+          <Item Value="ItemDescription"/>
+          <Item Value="Brand"/>
+        </AttrNames>
+      </nodeDefinition>
+    </tree>
+    <listOfValues StaticList="false" IterBinding="FilterView1Iterator"
+                  Uses="LOV_EndUser" id="EndUser"/>
+    <listOfValues StaticList="false" IterBinding="FilterView1Iterator"
+                  Uses="LOV_Brand" id="Brand"/>
+    <listOfValues StaticList="false" IterBinding="FilterView1Iterator"
+                  Uses="LOV_Unit" id="Unit"/>
+    <listOfValues StaticList="false" IterBinding="FilterView1Iterator"
+                  Uses="LOV_Buyer" id="Buyer3"/>
+    <listOfValues StaticList="false" IterBinding="FilterView1Iterator"
+                  Uses="LOV_Season" id="Season3"/>
+    <listOfValues StaticList="false" IterBinding="FilterView1Iterator"
+                  Uses="LOV_Fit" id="Fit"/>
+    <listOfValues StaticList="false" IterBinding="FilterView1Iterator"
+                  Uses="LOV_ItemDescription" id="ItemDescription"/>
+    <tree IterBinding="orderVsSaleVO1Iterator" id="orderVsSaleVO1">
+      <nodeDefinition DefName="mnj.mfg.model.views.orderVsSaleVO"
+                      Name="orderVsSaleVO10">
+        <AttrNames>
+          <Item Value="OrgId"/>
+          <Item Value="BuyerId"/>
+          <Item Value="Season"/>
+          <Item Value="Style"/>
+          <Item Value="WashName"/>
+          <Item Value="Colour"/>
+          <Item Value="OrdQty"/>
+          <Item Value="OrdUniPrice"/>
+          <Item Value="TotOrdPrice"/>
+          <Item Value="SalesQty"/>
+          <Item Value="SalesUnitPrice"/>
+          <Item Value="TotSalesPrice"/>
+          <Item Value="Difference"/>
+          <Item Value="ShortShipment"/>
+          <Item Value="ExcessShipment"/>
+          <Item Value="ShipmentPct"/>
+          <Item Value="Buyer"/>
+        </AttrNames>
+      </nodeDefinition>
+    </tree>
+    <tree IterBinding="orderDetailsVO1Iterator" id="orderDetailsVO1">
+      <nodeDefinition DefName="mnj.mfg.model.views.orderDetailsVO"
+                      Name="orderDetailsVO10">
+        <AttrNames>
+          <Item Value="ProductionUnit"/>
+          <Item Value="HeaderId"/>
+          <Item Value="LineId"/>
+          <Item Value="BuyerId"/>
+          <Item Value="OrgId"/>
+          <Item Value="OrderNumber"/>
+          <Item Value="CustomerName"/>
+          <Item Value="BpoNumber"/>
+          <Item Value="Style"/>
+          <Item Value="Season"/>
+          <Item Value="Colour"/>
+          <Item Value="WashName"/>
+          <Item Value="BpoQty"/>
+          <Item Value="UnitSellingPrice"/>
+          <Item Value="InventoryItemId"/>
+          <Item Value="DeliveryDate"/>
+          <Item Value="Classification"/>
+          <Item Value="CreatedBy"/>
+          <Item Value="CreationDate"/>
+          <Item Value="LastUpdatedBy"/>
+          <Item Value="LastUpdateDate"/>
+          <Item Value="ReplaceBpo"/>
+          <Item Value="FinishGoodsColor"/>
+          <Item Value="Color"/>
+          <Item Value="Bpo"/>
+        </AttrNames>
+      </nodeDefinition>
+    </tree>
+    <tree IterBinding="washCostReport1Iterator" id="washCostReport1">
+      <nodeDefinition DefName="mnj.mfg.model.views.washCostReport"
+                      Name="washCostReport10">
+        <AttrNames>
+          <Item Value="LineId"/>
+          <Item Value="PocNo"/>
+          <Item Value="BuyerName"/>
+          <Item Value="Season"/>
+          <Item Value="StyleNo"/>
+          <Item Value="Brand"/>
+          <Item Value="StyleName"/>
+          <Item Value="ColourWash"/>
+          <Item Value="OrderQty"/>
+          <Item Value="WashCost"/>
+          <Item Value="ServiceItemPrint"/>
+          <Item Value="ServiceItemEmbroidery"/>
+          <Item Value="Cm"/>
+          <Item Value="Fob"/>
+          <Item Value="FabricCost"/>
+          <Item Value="TrimCost"/>
+          <Item Value="Remarks"/>
+          <Item Value="Sam"/>
+          <Item Value="StyleEfficiency"/>
+          <Item Value="ProdPerLinePerH"/>
+        </AttrNames>
+      </nodeDefinition>
+    </tree>
+    <action IterBinding="MnjMfgPrecostingHView1Iterator"
+            id="setCurrentRowWithKey"
+            InstanceName="AppModuleDataControl.MnjMfgPrecostingHView1"
+            DataControl="AppModuleDataControl" RequiresUpdateModel="false"
+            Action="setCurrentRowWithKey">
+      <NamedData NDName="rowKey" NDType="java.lang.String"/>
+    </action>
+    <tree IterBinding="salesDetailsVO1Iterator" id="salesDetailsVO1">
+      <nodeDefinition DefName="mnj.mfg.model.views.salesDetailsVO"
+                      Name="salesDetailsVO10">
+        <AttrNames>
+          <Item Value="OrgId"/>
+          <Item Value="BuyerId"/>
+          <Item Value="Season"/>
+          <Item Value="Style"/>
+          <Item Value="UnitPrice"/>
+          <Item Value="ShipQty"/>
+          <Item Value="InvValue"/>
+          <Item Value="OrderItemId"/>
+          <Item Value="ToDateAttributeDate1"/>
+          <Item Value="WashName"/>
+          <Item Value="Color"/>
+          <Item Value="AttributeDate1_1"/>
+        </AttrNames>
+      </nodeDefinition>
+    </tree>
+  </bindings>
+</pageDefinition>

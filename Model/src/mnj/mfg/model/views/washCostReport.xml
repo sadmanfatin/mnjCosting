@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="windows-1252" ?>
+<!DOCTYPE ViewObject SYSTEM "jbo_03_01.dtd">
+<!---->
+<ViewObject
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="washCostReport"
+  Version="11.1.1.62.29"
+  InheritPersonalization="true"
+  BindingStyle="OracleName"
+  CustomQuery="true"
+  FetchMode="FETCH_AS_NEEDED"
+  PageIterMode="Full"
+  UseGlueCode="false">
+  <DesignTime>
+    <Attr Name="_isExpertMode" Value="true"/>
+  </DesignTime>
+  <Properties>
+    <SchemaBasedProperties>
+      <LABEL
+        ResId="mnj.mfg.model.views.washCostReport_LABEL"/>
+    </SchemaBasedProperties>
+  </Properties>
+  <Variable
+    Name="param"
+    Kind="where"
+    Type="oracle.jbo.domain.Number"/>
+  <SQLQuery>
+    <![CDATA[SELECT DISTINCT
+         l.line_id,
+         h.header_no poc_no,
+         (SELECT customer_name
+            FROM ar_customers ac
+           WHERE ac.customer_id = h.buyer_id AND ROWNUM = 1)
+            AS buyer_name,
+         h.buyer_id,
+         h.season,
+         --h.style_no old_style,/*Commented by Mr. Sakibul Islam on 18.Mar.2020*/
+         /**
+    Case statement added by Mr. Sakibul Islam for fetching current_style_no on 18.Mar.2020 **/
+         (CASE
+             WHEN (SELECT DECODE (StyleLineEO.TRACK_BASIS,
+                                  'Style Name', StyleLineEO.STYLE_NAME,
+                                  'Style Number', StyleLineEO.STYLE_NUMBER)
+                     FROM PWC_MFG_BSS_STYLE_L StyleLineEO,
+                          pwc_mfg_bss_buyer_h pwcmfgbssbuyerh,
+                          PWC_MFG_BSS_SEASON_D SeasonDetailEO
+                    WHERE     StyleLineEO.STYLE_IDENTIFIER = h.STYLE_NO
+                          AND pwcmfgbssbuyerh.BUYER_ID = h.BUYER_ID
+                          AND SeasonDetailEO.SEASON_NAME = h.season --added by Sakibul Islam on 13-Jan-2020
+                          --AND   pwcmfgbssbuyerh.ORG_ID = mmoda.final_mfg_org_id
+                          AND StyleLineEO.HEADER_ID = pwcmfgbssbuyerh.HEADER_ID
+                          AND SeasonDetailEO.LINE_ID = StyleLineEO.LINE_ID
+                          AND pwcmfgbssbuyerh.header_id = StyleLineEO.HEADER_ID -- added by nahian on 15-apr-18
+                                                                               )
+                     IS NULL
+             THEN
+                h.STYLE_NO
+             WHEN (SELECT DECODE (StyleLineEO.TRACK_BASIS,
+                                  'Style Name', StyleLineEO.STYLE_NAME,
+                                  'Style Number', StyleLineEO.STYLE_NUMBER)
+                     FROM PWC_MFG_BSS_STYLE_L StyleLineEO,
+                          pwc_mfg_bss_buyer_h pwcmfgbssbuyerh,
+                          PWC_MFG_BSS_SEASON_D SeasonDetailEO
+                    WHERE     StyleLineEO.STYLE_IDENTIFIER = h.STYLE_NO
+                          AND pwcmfgbssbuyerh.BUYER_ID = h.BUYER_ID
+                          AND SeasonDetailEO.SEASON_NAME = h.season --added by Sakibul Islam on 13-Jan-2020
+                          --AND   pwcmfgbssbuyerh.ORG_ID = mmoda.final_mfg_org_id
+                          AND StyleLineEO.HEADER_ID = pwcmfgbssbuyerh.HEADER_ID
+                          AND SeasonDetailEO.LINE_ID = StyleLineEO.LINE_ID
+                          AND pwcmfgbssbuyerh.header_id = StyleLineEO.HEADER_ID -- added by nahian on 15-apr-18
+                                                                               )
+                     IS NOT NULL
+             THEN
+                (SELECT DECODE (StyleLineEO.TRACK_BASIS,
+                                'Style Name', StyleLineEO.STYLE_NAME,
+                                'Style Number', StyleLineEO.STYLE_NUMBER)
+                   FROM PWC_MFG_BSS_STYLE_L StyleLineEO,
+                        pwc_mfg_bss_buyer_h pwcmfgbssbuyerh,
+                        PWC_MFG_BSS_SEASON_D SeasonDetailEO
+                  WHERE     StyleLineEO.STYLE_IDENTIFIER = h.STYLE_NO
+                        AND pwcmfgbssbuyerh.BUYER_ID = h.BUYER_ID
+                        AND SeasonDetailEO.SEASON_NAME = h.season --added by Sakibul Islam on 13-Jan-2020
+                        --AND   pwcmfgbssbuyerh.ORG_ID = mmoda.final_mfg_org_id
+                        AND StyleLineEO.HEADER_ID = pwcmfgbssbuyerh.HEADER_ID
+                        AND SeasonDetailEO.LINE_ID = StyleLineEO.LINE_ID
+                        AND pwcmfgbssbuyerh.header_id = StyleLineEO.HEADER_ID -- added by nahian on 15-apr-18
+                                                                             )
+          END)
+            style_no,
+         h.brand,
+         h.style_name_new AS style_name,
+         INITCAP (l.colour || '-' || l.wash_name) colour_wash,
+         MJORDER.ORDER_QTY,
+         l.wash_cost,
+         (SELECT CASE
+                    WHEN    UPPER (d.ref_code) LIKE '%PRINT%'
+                         OR UPPER (d.ITEM_DESC) LIKE '%PRINT%'
+                    THEN
+                       NVL (d.final_cost_per_pcs, 0)
+                    ELSE
+                       NULL
+                 END
+            FROM mnj_mfg_precosting_item_d d
+           WHERE     d.line_id = l.line_id
+                 AND d.item_prefix IN (55, 37)
+                 AND (   UPPER (d.ref_code) LIKE '%PRINT%'
+                      OR UPPER (d.ITEM_DESC) LIKE '%PRINT%')
+                 AND ROWNUM = 1)
+            Service_Item_Print,
+         (SELECT CASE
+                    WHEN    UPPER (d.ref_code) LIKE '%EMB%'
+                         OR UPPER (d.ITEM_DESC) LIKE '%EMB%'
+                    THEN
+                       NVL (d.final_cost_per_pcs, 0)
+                    ELSE
+                       NULL
+                 END
+            FROM mnj_mfg_precosting_item_d d
+           WHERE     d.line_id = l.line_id
+                 AND d.item_prefix IN (55, 37)
+                 AND (   UPPER (d.ref_code) LIKE '%EMB%'
+                      OR UPPER (d.ITEM_DESC) LIKE '%EMB%')
+                 AND ROWNUM = 1)
+            Service_Item_Embroidery,
+         --d.ref_code,--,
+         ROUND (l.cm, 3) cm,                   -- added by nahian on 28-mar-18
+         ROUND (l.fob_with_comm, 2) fob,       -- added by nahian on 16-aug-18
+         ROUND (l.fabric_cost, 2) fabric_cost, -- added by nahian on 16-aug-18
+         ROUND (l.trim_cost, 2) trim_cost,     -- added by nahian on 16-aug-18
+         l.remarks remarks,                    -- added by nahian on 28-mar-18
+         l.SAM,
+         l.STYLE_EFFICIENCY,
+         l.PROD_PER_LINE_PER_H
+    FROM mnj_mfg_precosting_h h,
+         mnj_mfg_precosting_l l,
+         MNJ_ORDER_QTY_SUMMERY mjOrder,
+         hr_all_organization_units unit
+   WHERE     h.header_id = l.header_id(+)
+         AND h.gm_approval = 'Y'
+         AND h.version_no =
+                (  SELECT MAX (version_no)
+                     FROM mnj_mfg_precosting_h h2
+                    WHERE h.header_no = h2.header_no AND h2.gm_approval = 'Y'
+                 GROUP BY h2.header_no)
+         AND (l.clone_flag <> 'Y' OR l.clone_flag IS NULL)
+         AND l.wash_cost IS NOT NULL
+         /*Commented by Mr. Sakibul Islam on 18.Mar.2020*/
+         --AND mjOrder.style =
+         --              (CASE
+         --                  WHEN h.division = 'Style Name' THEN h.style_name_new
+         --                  WHEN h.division = 'Style No.' THEN h.style_no
+         --               END)
+         /**
+                         Case statement added by Mr. Sakibul Islam for fetching current_style_no on 18.Mar.2020 **/
+         AND mjOrder.style =
+                (CASE
+                    WHEN (SELECT DECODE (
+                                    StyleLineEO.TRACK_BASIS,
+                                    'Style Name', StyleLineEO.STYLE_NAME,
+                                    'Style Number', StyleLineEO.STYLE_NUMBER)
+                            FROM PWC_MFG_BSS_STYLE_L StyleLineEO,
+                                 pwc_mfg_bss_buyer_h pwcmfgbssbuyerh,
+                                 PWC_MFG_BSS_SEASON_D SeasonDetailEO
+                           WHERE     StyleLineEO.STYLE_IDENTIFIER = h.STYLE_NO
+                                 AND pwcmfgbssbuyerh.BUYER_ID = h.BUYER_ID
+                                 AND SeasonDetailEO.SEASON_NAME = h.season --added by Sakibul Islam on 13-Jan-2020
+                                 --AND   pwcmfgbssbuyerh.ORG_ID = mmoda.final_mfg_org_id
+                                 AND StyleLineEO.HEADER_ID =
+                                        pwcmfgbssbuyerh.HEADER_ID
+                                 AND SeasonDetailEO.LINE_ID =
+                                        StyleLineEO.LINE_ID
+                                 AND pwcmfgbssbuyerh.header_id =
+                                        StyleLineEO.HEADER_ID -- added by nahian on 15-apr-18
+                                                             )
+                            IS NULL
+                    THEN
+                       h.STYLE_NO
+                    WHEN (SELECT DECODE (
+                                    StyleLineEO.TRACK_BASIS,
+                                    'Style Name', StyleLineEO.STYLE_NAME,
+                                    'Style Number', StyleLineEO.STYLE_NUMBER)
+                            FROM PWC_MFG_BSS_STYLE_L StyleLineEO,
+                                 pwc_mfg_bss_buyer_h pwcmfgbssbuyerh,
+                                 PWC_MFG_BSS_SEASON_D SeasonDetailEO
+                           WHERE     StyleLineEO.STYLE_IDENTIFIER = h.STYLE_NO
+                                 AND pwcmfgbssbuyerh.BUYER_ID = h.BUYER_ID
+                                 AND SeasonDetailEO.SEASON_NAME = h.season --added by Sakibul Islam on 13-Jan-2020
+                                 --AND   pwcmfgbssbuyerh.ORG_ID = mmoda.final_mfg_org_id
+                                 AND StyleLineEO.HEADER_ID =
+                                        pwcmfgbssbuyerh.HEADER_ID
+                                 AND SeasonDetailEO.LINE_ID =
+                                        StyleLineEO.LINE_ID
+                                 AND pwcmfgbssbuyerh.header_id =
+                                        StyleLineEO.HEADER_ID -- added by nahian on 15-apr-18
+                                                             )
+                            IS NOT NULL
+                    THEN
+                       (SELECT DECODE (
+                                  StyleLineEO.TRACK_BASIS,
+                                  'Style Name', StyleLineEO.STYLE_NAME,
+                                  'Style Number', StyleLineEO.STYLE_NUMBER)
+                          FROM PWC_MFG_BSS_STYLE_L StyleLineEO,
+                               pwc_mfg_bss_buyer_h pwcmfgbssbuyerh,
+                               PWC_MFG_BSS_SEASON_D SeasonDetailEO
+                         WHERE     StyleLineEO.STYLE_IDENTIFIER = h.STYLE_NO
+                               AND pwcmfgbssbuyerh.BUYER_ID = h.BUYER_ID
+                               AND SeasonDetailEO.SEASON_NAME = h.season --added by Sakibul Islam on 13-Jan-2020
+                               --AND   pwcmfgbssbuyerh.ORG_ID = mmoda.final_mfg_org_id
+                               AND StyleLineEO.HEADER_ID =
+                                      pwcmfgbssbuyerh.HEADER_ID
+                               AND SeasonDetailEO.LINE_ID = StyleLineEO.LINE_ID
+                               AND pwcmfgbssbuyerh.header_id =
+                                      StyleLineEO.HEADER_ID -- added by nahian on 15-apr-18
+                                                           )
+                 END)
+         AND mjOrder.BUYER_ID = h.buyer_id
+         AND UPPER (mjOrder.WASH_NAME) = UPPER (l.wash_name)
+         AND UPPER (mjOrder.COLOUR) = UPPER (l.colour)
+         AND ROUND (mjOrder.UNIT_SELLING_PRICE, 2) = ROUND (l.fob_with_comm, 2)
+         AND mjOrder.org_id = unit.ORGANIZATION_ID
+         AND unit.attribute1 = 'Stitching'
+         AND h.season = mjOrder.season
+         AND unit.name = h.production_unit
+         --and h.season='C1-20 Spring' and mjOrder.style='531705'
+         AND 1 = :param
+ORDER BY h.header_no]]>
+  </SQLQuery>
+  <ViewAttribute
+    Name="LineId"
+    IsUpdateable="false"
+    IsPersistent="false"
+    IsNotNull="true"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="LINE_ID"
+    Expression="LINE_ID"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="PocNo"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="500"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="POC_NO"
+    Expression="POC_NO"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="500"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="BuyerName"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="50"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="BUYER_NAME"
+    Expression="BUYER_NAME"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="50"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="BuyerId"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="BUYER_ID"
+    Expression="BUYER_ID"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="Season"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="500"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="SEASON"
+    Expression="SEASON"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="500"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="StyleNo"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="500"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="STYLE_NO"
+    Expression="STYLE_NO"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="500"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="Brand"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="100"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="BRAND"
+    Expression="BRAND"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="100"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="StyleName"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="250"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="STYLE_NAME"
+    Expression="STYLE_NAME"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="250"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="ColourWash"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="1001"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="COLOUR_WASH"
+    Expression="COLOUR_WASH"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="1001"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="OrderQty"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="ORDER_QTY"
+    Expression="ORDER_QTY"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="WashCost"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="WASH_COST"
+    Expression="WASH_COST"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="ServiceItemPrint"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="SERVICE_ITEM_PRINT"
+    Expression="SERVICE_ITEM_PRINT"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="ServiceItemEmbroidery"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="SERVICE_ITEM_EMBROIDERY"
+    Expression="SERVICE_ITEM_EMBROIDERY"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="Cm"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="CM"
+    Expression="CM"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="Fob"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="FOB"
+    Expression="FOB"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="FabricCost"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="FABRIC_COST"
+    Expression="FABRIC_COST"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="TrimCost"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="TRIM_COST"
+    Expression="TRIM_COST"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="Remarks"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Precision="500"
+    Type="java.lang.String"
+    ColumnType="VARCHAR2"
+    AliasName="REMARKS"
+    Expression="REMARKS"
+    SQLType="VARCHAR">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="500"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="Sam"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="SAM"
+    Expression="SAM"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="StyleEfficiency"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="STYLE_EFFICIENCY"
+    Expression="STYLE_EFFICIENCY"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="ProdPerLinePerH"
+    IsUpdateable="false"
+    IsPersistent="false"
+    PrecisionRule="true"
+    Type="oracle.jbo.domain.Number"
+    ColumnType="NUMBER"
+    AliasName="PROD_PER_LINE_PER_H"
+    Expression="PROD_PER_LINE_PER_H"
+    SQLType="NUMERIC">
+    <DesignTime>
+      <Attr Name="_DisplaySize" Value="39"/>
+    </DesignTime>
+  </ViewAttribute>
+  <ResourceBundle>
+    <PropertiesBundle
+      PropertiesFile="mnj.mfg.model.ModelBundle"/>
+  </ResourceBundle>
+</ViewObject>

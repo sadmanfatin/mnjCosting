@@ -1,0 +1,209 @@
+    public static void showMessage(String messege , String severity ) {
+        
+        
+        FacesMessage fm = new FacesMessage(messege);
+        
+        if(severity.equals("info")){
+            fm.setSeverity(FacesMessage.SEVERITY_INFO);
+        }
+        else if(severity.equals("warn")){
+            fm.setSeverity(FacesMessage.SEVERITY_WARN);
+        }
+        else if(severity.equals("error")){
+            fm.setSeverity(FacesMessage.SEVERITY_ERROR);
+        }
+        
+        FacesContext context = FacesContext.getCurrentInstance();
+        context.addMessage(null, fm);
+        
+    }
+
+
+
+==================================================================================================    
+    
+    public void refreshQueryKeepingCurrentRow(ViewObject viewObject )  {
+        
+        
+         Row currentRow;
+         Key currentRowKey;
+         
+         // added on 7.jan.18 to handle exception if view object has no current row
+        try{
+           currentRow = viewObject.getCurrentRow();
+           currentRowKey = currentRow.getKey();
+        }
+        catch(Exception e){
+            return;
+        }
+        
+     
+       
+      
+       int rangePosOfCurrentRow = viewObject.getRangeIndexOf(currentRow);
+       int rangeStartBeforeQuery = viewObject.getRangeStart();
+       viewObject.executeQuery();
+       viewObject.setRangeStart(rangeStartBeforeQuery);
+       /*
+        * In 10.1.2, there is this convenience method we could use
+        * instead of the remaining lines of code
+        *
+        *  findAndSetCurrentRowByKey(currentRowKey,rangePosOfCurrentRow);
+        *  
+        */
+       
+         
+       Row[] rows = viewObject.findByKey(currentRowKey, 1);
+       if (rows != null && rows.length == 1)
+       {
+          viewObject.scrollRangeTo(rows[0], rangePosOfCurrentRow);
+          viewObject.setCurrentRowAtRangeIndex(viewObject.getRangeIndexOf(rows[0]));
+       }
+       
+               
+     }
+
+==================================================================================================
+
+    private double calculateCost(Row lineRow) {
+
+         double costCal=0.00;
+                double productivity=0.00;
+                double production=0.00;
+                try{
+                    // production =Double.parseDouble((getProdCostPerLine().getValue().toString())); 
+                    // System.out.println("5555=======================   production old "+ getProdCostPerLine().getValue());
+                    
+                     production   = Double.parseDouble( lineRow.getAttribute("ProdCostLinePerH").toString());
+             
+                }
+                catch(Exception e) {
+                    production=0.00;
+                }
+                try{
+                    
+                    //productivity =Double.parseDouble((getProductivity().getValue().toString())); 
+                    
+                   // System.out.println("5555=======================    productivity old "+ productivity );
+                    productivity = Double.parseDouble( lineRow.getAttribute("ProdCostLinePerH").toString());
+            
+                }
+                catch(Exception e) {
+                    productivity =0.00;
+                }
+                if(productivity !=0){
+
+                   costCal=production/productivity;
+                }
+                else{
+                    costCal=0.00;
+                }
+
+             return costCal ;
+             
+
+
+        }
+
+==================================================================================================
+
+
+
+
+
+    private void calculateAndUpdateFobValues(Double FOB, Row lineRow) {
+    
+       FOB=Double.parseDouble(format.format(FOB));
+
+        
+        double commVal =0.0; // MyMath.numeric3(getCommission());
+        try {
+            commVal=Double.parseDouble(lineRow.getAttribute("CommisonPrcnt").toString());
+        }
+        catch(Exception e){
+            commVal=0.0;
+        }
+        double fobWitcommVal = (FOB * commVal / 100) + FOB;
+        
+        
+        //vvv   double orderQtyVal = MyMath.numeric(getOrderQty());
+        double   orderQtyVal  ;
+        
+        try {
+            orderQtyVal = Double.parseDouble(am.getMnjMfgPrecostingHView1().getCurrentRow().getAttribute("OrderQty").toString())   ;
+        } catch (Exception e) {
+            // TODO: Add catch code
+            e.printStackTrace();
+        }      
+      //  System.out.println("555======================    orderQtyVal old  " +MyMath.numeric(getOrderQty()) + "   orderQtyVal new         " +orderQtyVal );
+        
+        //vvv  double smsQtyVal = MyMath.numeric3(getSMSQtyFromTable());
+        
+          double smsQtyVal ;
+        
+        try {
+            smsQtyVal = Double.parseDouble(  lineRow.getAttribute("SmsQty").toString());
+        } catch (Exception e) {
+            // TODO: Add catch code
+              smsQtyVal=0;
+          //  e.printStackTrace();
+        }
+        // System.out.println("555======================    smsQtyVal old  " +MyMath.numeric3(getSMSQtyFromTable()) + "   smsQtyVal new         " + smsQtyVal); 
+          
+          double fobWithSmsVal = 0.00;
+          
+        //        vvv double targetPrice = MyMath.numeric(getTargetPrice());
+         double targetPrice ;
+        
+        try {
+            targetPrice = Double.parseDouble(  lineRow.getAttribute("TargetPrice").toString());
+        } catch (Exception e) {
+            // TODO: Add catch code
+          targetPrice = 0.0;
+            
+         ///   e.printStackTrace();
+        }
+               
+      //  System.out.println("555======================    targetPrice old  " + MyMath.numeric(getTargetPrice()) + "   targetPrice  new         " + targetPrice); 
+        
+        
+        try {
+            if (orderQtyVal > 0)
+            fobWithSmsVal =((fobWitcommVal) * orderQtyVal + (fobWitcommVal) * smsQtyVal) /orderQtyVal;
+            else fobWithSmsVal = 0;
+        } catch (Exception e) {
+           
+           fobWithSmsVal =0.0 ;
+            System.out.println("Exception value --===================->"+fobWithSmsVal);
+        }
+
+
+        if (fobWithSmsVal > fobWitcommVal) {
+            lineRow.setAttribute("FobWithComm",
+                                 Double.parseDouble(format.format(fobWithSmsVal)));
+
+            lineRow.setAttribute("Difference",
+                                 Double.parseDouble(format.format(fobWithSmsVal)) -
+                                 targetPrice);
+        } else {
+
+            lineRow.setAttribute("FobWithComm",
+                                 Double.parseDouble(format.format(fobWitcommVal)));
+            lineRow.setAttribute("Difference",
+                                 Double.parseDouble(format.format(fobWitcommVal)) -
+                                 targetPrice);
+        }
+        lineRow.setAttribute("FobWithSmsSample",
+                             Double.parseDouble(format.format(fobWithSmsVal)));
+
+        lineRow.setAttribute("FobWithComm", FOB);
+        lineRow.setAttribute("Fob",
+                             Double.parseDouble(format.format(fobWitcommVal)));
+
+        //        System.out.println("..........-----------------samValue="+samValue);
+        //        System.out.println("..........-----------------smvValue="+smvValue);
+        //        System.out.println("..........-----------------factoryAvrgEff="+factoryAvrgEff);
+        //        System.out.println("..........-----------------StyleEff="+StyleEff);
+        //        System.out.println("..........-----------------newCost="+newCost);
+    }
+
